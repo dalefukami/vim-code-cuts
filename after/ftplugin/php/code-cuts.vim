@@ -10,8 +10,9 @@ onoremap fn :<c-u>execute 'normal! ?\<function\>\s*&*\s*\zs\w*\ze\s*('."\r".'ve'
 
 " Operators {{{1
 
-" Create function {{{2
 let s:snip_mate_exists = exists('*MakeSnip')
+
+" Create function {{{2
 if s:snip_mate_exists
     let b:code_cuts_function_header = 'function_header'
     call MakeSnip('php', b:code_cuts_function_header,'${1:private }function ${2:FunctionName}(${3}) {')
@@ -26,4 +27,21 @@ function! CreateFunction(type, ...)
         let l:snippet_code = "\<esc>A\<C-R>=TriggerSnippet()\<cr>"
     endif
     execute "normal! `[ma`]o}\<esc>`aO".b:code_cuts_function_header.l:snippet_code
+endfunction
+
+" Create if statement {{{2
+if s:snip_mate_exists
+    let b:code_cuts_if_header = 'if_header'
+    call MakeSnip('php', b:code_cuts_if_header,'if( ${1:condition} ) {')
+else
+    let b:code_cuts_if_header = 'if() {'
+endif
+
+nnoremap <silent> <leader>ci :set operatorfunc=CreateIf<CR>g@
+function! CreateIf(type, ...)
+    let l:snippet_code = ''
+    if s:snip_mate_exists
+        let l:snippet_code = "\<esc>A\<C-R>=TriggerSnippet()\<cr>"
+    endif
+    execute "normal! `[ma`]o}\<esc>`aO".b:code_cuts_if_header.l:snippet_code
 endfunction
