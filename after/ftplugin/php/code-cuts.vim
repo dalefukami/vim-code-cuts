@@ -14,7 +14,7 @@ onoremap fn :<c-u>execute 'normal! ?\<function\>\s*&*\s*\zs\w*\ze\s*('."\r".'ve'
 let s:snip_mate_exists = exists('*MakeSnip')
 if s:snip_mate_exists
     let b:code_cuts_function_header = 'function_header'
-    call MakeSnip('php', b:code_cuts_function_header,'${1:public }function ${2:FunctionName}(${3}) {')
+    call MakeSnip('php', b:code_cuts_function_header,'${1:private }function ${2:FunctionName}(${3}) {')
 else
     let b:code_cuts_function_header = 'private function function_name() {'
 endif
