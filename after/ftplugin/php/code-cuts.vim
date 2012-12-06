@@ -58,14 +58,38 @@ nnoremap <silent> <leader>ref :set operatorfunc=ExtractFunction<CR>g@
 vnoremap <silent> <leader>ref :<c-u>call ExtractFunction(visualmode())<cr>
 
 function! ExtractFunction(type, ...)
-    echom "mode: ".a:type
-    if a:type ==# 'char' || a:type ==# 'line'
-        execute "normal! `[V`]d"
-    else
-        execute "normal! `<V`>d"
+    echom a:type
+    " Ensure the right text is selected
+    if a:type ==# 'char'
+        silent execute "normal! `[v`]"
+    elseif a:type ==# 'line'
+        silent execute "normal! `[V`]"
+    elseif a:type ==# 'v'
+        silent execute "normal! `<v`>"
+    elseif a:type ==# 'V'
+        silent execute "normal! `<V`>"
     endif
-    execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\w*\s*('."\r".'/{'."\r".'%o'."\<esc>".'p'
-    execute "normal! `[v`]"
+
+    " Delete the source text into register
+    silent execute 'normal! "qd'
+    " Find the end of the current function
+    silent execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\w*\s*('."\r".'/{'."\r".'%o'."\<esc>"
+    " Ensure a line-wise paste
+    silent put q
+    " Create function around new lines
+    silent execute "normal! `[v`]"
     call CreateFunction(visualmode())
 endfunction
+
+" TODO: Add semi-colon to character-wise extractions
+" TODO: Convert char-wise multi-line visual selections to copy full lines
+" TODO: Return to spot where text was yanked?
+" TODO: Replace location with $this->newMethod() call
+" TODO: Figure out parameters
+" TODO: Auto Indentation
+" TODO: Play nice
+"       - Restore register q
+"       - Restore previous search expression
+
+
 
