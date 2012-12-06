@@ -52,3 +52,20 @@ vnoremap <silent> <leader>ci :<c-u>call CreateIf(visualmode())<cr>
 function! CreateIf(type, ...)
     call WrapLines(a:type, b:code_cuts_if_header)
 endfunction
+
+" Extract function {{{2
+nnoremap <silent> <leader>ref :set operatorfunc=ExtractFunction<CR>g@
+vnoremap <silent> <leader>ref :<c-u>call ExtractFunction(visualmode())<cr>
+
+function! ExtractFunction(type, ...)
+    echom "mode: ".a:type
+    if a:type ==# 'char' || a:type ==# 'line'
+        execute "normal! `[V`]d"
+    else
+        execute "normal! `<V`>d"
+    endif
+    execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\w*\s*('."\r".'/{'."\r".'%o'."\<esc>".'p'
+    execute "normal! `[v`]"
+    call CreateFunction(visualmode())
+endfunction
+
