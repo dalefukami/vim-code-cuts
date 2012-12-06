@@ -64,9 +64,9 @@ function! ExtractFunction(type, ...)
         silent execute "normal! `[v`]"
     elseif a:type ==# 'line'
         silent execute "normal! `[V`]"
-    elseif a:type ==# 'v'
+    elseif a:type ==# 'v' && line("'<") == line("'>") " Character-wise selection on single line
         silent execute "normal! `<v`>"
-    elseif a:type ==# 'V'
+    else
         silent execute "normal! `<V`>"
     endif
 
@@ -82,7 +82,6 @@ function! ExtractFunction(type, ...)
 endfunction
 
 " TODO: Add semi-colon to character-wise extractions
-" TODO: Convert char-wise multi-line visual selections to copy full lines
 " TODO: Return to spot where text was yanked?
 " TODO: Replace location with $this->newMethod() call
 " TODO: Figure out parameters
