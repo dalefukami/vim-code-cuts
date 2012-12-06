@@ -84,13 +84,13 @@ function! ExtractFunction(type, ...)
     silent execute "normal! `[v`]"
     let l:function_header = 'private function '.l:new_name.'() {'
     call WrapLines(visualmode(), l:function_header, 0)
+    execute "normal! =a{"
 endfunction
 
 " TODO: Add semi-colon to character-wise extractions
 " TODO: Add semi-colon to line-wise replacement function call
 " TODO: Return to spot where text was yanked?
 " TODO: Figure out parameters
-" TODO: Auto Indentation
 " TODO: Play nice
 "       - Restore register q
 "       - Restore previous search expression
