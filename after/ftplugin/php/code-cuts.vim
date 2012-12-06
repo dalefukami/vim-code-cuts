@@ -8,6 +8,10 @@ vnoremap <buffer> af :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*('."\r".'
 " Function Name (php) {{{2
 onoremap ifn :<c-u>execute 'normal! ?\<function\>\s*&*\s*\zs\w*\ze\s*('."\r".'ve'<cr>
 
+" Function Parameters (php) {{{2
+" Note we insert an extra character to account for empty param lists
+onoremap ifp :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*\zs('."\r".'aj'."\evt)"<cr>
+
 " Operators {{{1
 
 let s:snip_mate_exists = exists('*MakeSnip')
