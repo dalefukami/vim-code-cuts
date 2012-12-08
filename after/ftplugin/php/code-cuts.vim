@@ -69,17 +69,26 @@ function! ExtractFunction(type, ...)
     let l:new_name = input("Enter new function name: ")
     " Ensure the right text is selected
     if a:type ==# 'char'
+        let l:append_semicolon_to_new_method = 1
+        let l:append_semicolon_to_method_call = 0
         silent execute "normal! `[v`]"
     elseif a:type ==# 'line'
+        let l:append_semicolon_to_new_method = 0
+        let l:append_semicolon_to_method_call = 1
         silent execute "normal! `[V`]"
     elseif a:type ==# 'v' && line("'<") == line("'>") " Character-wise selection on single line
+        let l:append_semicolon_to_new_method = 1
+        let l:append_semicolon_to_method_call = 0
         silent execute "normal! `<v`>"
     else
+        let l:append_semicolon_to_new_method = 0
+        let l:append_semicolon_to_method_call = 1
         silent execute "normal! `<V`>"
     endif
 
+    let l:postfix = l:append_semicolon_to_method_call ? ';' : ''
     " Change the text to the new call and store the old text into a register
-    silent execute 'normal! "qc$this->'.l:new_name."()\<esc>"
+    silent execute 'normal! "qc$this->'.l:new_name."()".l:postfix."\<esc>"
     " Find the end of the current function
     silent execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\w*\s*('."\r".'/{'."\r".'%o'."\<esc>"
     " Ensure a line-wise paste
@@ -88,12 +97,19 @@ function! ExtractFunction(type, ...)
     silent execute "normal! `[v`]"
     let l:function_header = 'private function '.l:new_name.'() {'
     call WrapLines(visualmode(), l:function_header, 0)
-    execute "normal! =a{"
+
+    " Proper indentation of the new method
+    silent execute "normal! =a{"
+    " Add a semicolon to the last line if deemed necessary
+    let l:postfix = l:append_semicolon_to_new_method ? ';' : ''
+    execute "normal! $%kA".l:postfix."\<esc>"
 endfunction
 
-" TODO: Add semi-colon to character-wise extractions
-" TODO: Add semi-colon to line-wise replacement function call
-" TODO: Return to spot where text was yanked?
+" TODO: Trim a character-wise selection
+" TODO: Add return statement if character-wise
+" TODO: For line-wise, if there's an = sign on the last line then remove the
+" variable, return result from method, and assign method result to variable
+" TODO: Return to spot where text was yanked or top of new method?
 " TODO: Figure out parameters
 " TODO: Play nice
 "       - Restore register q
