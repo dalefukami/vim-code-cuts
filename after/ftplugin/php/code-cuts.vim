@@ -96,6 +96,9 @@ function! ExtractFunction(type, ...)
     silent put q
     " Create function around new lines
     silent execute "normal! `[v`]"
+
+    " Remove trailing whitespace from lines
+    s/\s\+$//e
     let l:function_header = 'private function '.l:new_name.'() {'
     call WrapLines(visualmode(), l:function_header, 0)
 
