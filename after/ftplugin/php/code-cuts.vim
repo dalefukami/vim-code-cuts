@@ -98,11 +98,13 @@ function! ExtractFunction(type, ...)
     let l:function_header = 'private function '.l:new_name.'() {'
     call WrapLines(visualmode(), l:function_header, 0)
 
-    " Proper indentation of the new method
-    silent execute "normal! =a{"
     " Add a semicolon to the last line if deemed necessary
     let l:postfix = l:append_semicolon_to_new_method ? ';' : ''
     execute "normal! $%kA".l:postfix."\<esc>"
+
+    " Proper indentation of the new method - Doesn't seem to work for
+    " multi-line creation?
+    silent execute "normal! =a{"
 endfunction
 
 " TODO: Trim a character-wise selection
