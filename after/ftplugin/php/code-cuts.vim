@@ -67,21 +67,19 @@ vnoremap <silent> <leader>ref :<c-u>call ExtractFunction(visualmode())<cr>
 
 function! ExtractFunction(type, ...)
     let l:new_name = input("Enter new function name: ")
+    let l:append_semicolon_to_new_method = 0
+    let l:append_semicolon_to_method_call = 0
     " Ensure the right text is selected
     if a:type ==# 'char'
         let l:append_semicolon_to_new_method = 1
-        let l:append_semicolon_to_method_call = 0
         silent execute "normal! `[v`]"
     elseif a:type ==# 'line'
-        let l:append_semicolon_to_new_method = 0
         let l:append_semicolon_to_method_call = 1
         silent execute "normal! `[V`]"
     elseif a:type ==# 'v' && line("'<") == line("'>") " Character-wise selection on single line
         let l:append_semicolon_to_new_method = 1
-        let l:append_semicolon_to_method_call = 0
         silent execute "normal! `<v`>"
     else
-        let l:append_semicolon_to_new_method = 0
         let l:append_semicolon_to_method_call = 1
         silent execute "normal! `<V`>"
     endif
