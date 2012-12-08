@@ -69,15 +69,18 @@ function! ExtractFunction(type, ...)
     let l:new_name = input("Enter new function name: ")
     let l:append_semicolon_to_new_method = 0
     let l:append_semicolon_to_method_call = 0
+    let l:return_result = 0
     " Ensure the right text is selected
     if a:type ==# 'char'
         let l:append_semicolon_to_new_method = 1
+        let l:return_result = 1
         silent execute "normal! `[v`]"
     elseif a:type ==# 'line'
         let l:append_semicolon_to_method_call = 1
         silent execute "normal! `[V`]"
     elseif a:type ==# 'v' && line("'<") == line("'>") " Character-wise selection on single line
         let l:append_semicolon_to_new_method = 1
+        let l:return_result = 1
         silent execute "normal! `<v`>"
     else
         let l:append_semicolon_to_method_call = 1
@@ -100,13 +103,16 @@ function! ExtractFunction(type, ...)
     let l:postfix = l:append_semicolon_to_new_method ? ';' : ''
     execute "normal! $%kA".l:postfix."\<esc>"
 
+    " Add a return statement
+    let l:prefix = l:return_result ? 'return ' : ''
+    execute "normal! I".l:prefix."\<esc>"
+
     " Proper indentation of the new method - Doesn't seem to work for
     " multi-line creation?
     silent execute "normal! =a{"
 endfunction
 
 " TODO: Trim a character-wise selection
-" TODO: Add return statement if character-wise
 " TODO: For line-wise, if there's an = sign on the last line then remove the
 " variable, return result from method, and assign method result to variable
 " TODO: Return to spot where text was yanked or top of new method?
