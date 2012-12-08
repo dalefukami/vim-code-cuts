@@ -87,18 +87,24 @@ function! ExtractFunction(type, ...)
         silent execute "normal! `<V`>"
     endif
 
+    execute 'normal! "qy'
+    let l:components = GetFunctionExtractionComponents(@q,l:new_name)
+    " Change the text to the new call
     let l:postfix = l:append_semicolon_to_method_call ? ';' : ''
-    " Change the text to the new call and store the old text into a register
-    silent execute 'normal! "qc$this->'.l:new_name."()".l:postfix."\<esc>"
+    silent execute 'normal! gvc'.l:components.method_call.l:postfix."\<esc>=="
+
     " Find the end of the current function
     silent execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\w*\s*('."\r".'/{'."\r".'%o'."\<esc>"
     " Ensure a line-wise paste
+    let @q = l:components.method_body
     silent put q
     " Create function around new lines
     silent execute "normal! `[v`]"
 
     " Remove trailing whitespace from lines
     s/\s\+$//e
+
+    " Wrap with the function
     let l:function_header = 'private function '.l:new_name.'() {'
     call WrapLines(visualmode(), l:function_header, 0)
 
@@ -107,7 +113,7 @@ function! ExtractFunction(type, ...)
     execute "normal! $%kA".l:postfix."\<esc>"
 
     " Add a return statement
-    let l:prefix = l:return_result ? 'return ' : ''
+    let l:prefix = (l:return_result || l:components.is_assignment) ? 'return ' : ''
     execute "normal! I".l:prefix."\<esc>"
 
     " Proper indentation of the new method - Doesn't seem to work for
@@ -115,14 +121,27 @@ function! ExtractFunction(type, ...)
     silent execute "normal! =a{"
 endfunction
 
-" TODO: Trim a character-wise selection
-" TODO: For line-wise, if there's an = sign on the last line then remove the
-" variable, return result from method, and assign method result to variable
 " TODO: Return to spot where text was yanked or top of new method?
 " TODO: Figure out parameters
 " TODO: Play nice
 "       - Restore register q
 "       - Restore previous search expression
 
-
+function! GetFunctionExtractionComponents(text, method_name)
+    let lines = split(a:text, "\n")
+    let method_call = '$this->'.a:method_name."()"
+    let is_assignment = 0
+    if( len(lines) > 1 )
+        let last_line = lines[-1]
+        " Possible problem with == in the last line?
+        let pieces = split(last_line, "=")
+        if( len(pieces) > 1 )
+            let method_call = pieces[0].' = '.method_call
+            let pieces = pieces[1:]
+            let lines[-1] = join(pieces, "=")
+            let is_assignment = 1
+        endif
+    endif
+    return {"method_call": method_call, "method_body": join(lines,"\n"), "is_assignment": is_assignment}
+endfunction
 
