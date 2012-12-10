@@ -177,7 +177,7 @@ endfunction
 
 function! GetUsedVariablesForLine(line)
     let l:line_data = {"assigned_vars":[], "accessed_vars": []}
-    let l:line_parts = split(a:line, '=')
+    let l:line_parts = split(a:line, '[^=+-/*!><]\zs=\ze[^=]')
     if len(l:line_parts) < 1
         return l:line_data
     endif
@@ -213,6 +213,10 @@ function! Testit()
                 \ "$more_stuff->doSomething();",
                 \ "$test->blah($new_param);",
                 \ "$test->blah($new_param);",
+                \ "if( $condition1 === $condition2 ) {",
+                \ "if( $condition3 == $condition4 ) {",
+                \ "if( $condition5 != $condition6 ) {",
+                \ "$assign1=$param6;",
                 \ ]
     let g:result = GetRequiredFunctionParameters(g:test_lines)
 
