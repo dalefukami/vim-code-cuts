@@ -105,8 +105,7 @@ function! ExtractFunction(type, ...)
     s/\s\+$//e
 
     " Wrap with the function
-    let l:function_header = 'private function '.l:new_name.'() {'
-    call WrapLines(visualmode(), l:function_header, 0)
+    call WrapLines(visualmode(), l:components.function_header, 0)
 
     " Add a semicolon to the last line if deemed necessary
     let l:postfix = l:append_semicolon_to_new_method ? ';' : ''
@@ -122,14 +121,16 @@ function! ExtractFunction(type, ...)
 endfunction
 
 " TODO: Return to spot where text was yanked or top of new method?
-" TODO: Figure out parameters
+" TODO: Handle ==, ===, !=, +=, etc in the yanked lines when calculating
+" required params
 " TODO: Play nice
 "       - Restore register q
 "       - Restore previous search expression
 
 function! GetFunctionExtractionComponents(text, method_name)
     let lines = split(a:text, "\n")
-    let method_call = '$this->'.a:method_name."()"
+    let l:params = GetRequiredFunctionParameters(split(a:text,"\n"))
+    let method_call = '$thi>'.a:method_name."(".join(l:params,",").")"
     let is_assignment = 0
     if( len(lines) > 1 )
         let last_line = lines[-1]
@@ -142,6 +143,85 @@ function! GetFunctionExtractionComponents(text, method_name)
             let is_assignment = 1
         endif
     endif
-    return {"method_call": method_call, "method_body": join(lines,"\n"), "is_assignment": is_assignment}
+
+    let l:function_header = 'private function '.a:method_name.'('.join(l:params,",").') {'
+    return {"method_call": method_call, "method_body": join(lines,"\n"), "is_assignment": is_assignment, "function_header": l:function_header}
 endfunction
 
+function! GetRequiredFunctionParameters(lines)
+    let l:line_info = []
+    for l:line in a:lines
+        let l:line_info = add(l:line_info, GetUsedVariablesForLine(l:line))
+    endfor
+    let l:results = []
+    let l:assigned_before_accessed = []
+    let l:accessed_before_assigned = []
+    for l:info in l:line_info
+        for l:var in l:info.accessed_vars
+            if index(l:assigned_before_accessed, l:var) < 0
+                if l:var ==# "$this"
+                else
+                    call add(l:results, l:var)
+                    call add(l:accessed_before_assigned, l:var)
+                endif
+            endif
+        endfor
+        for l:var in l:info.assigned_vars
+            if index(l:accessed_before_assigned, l:var) < 0
+                call add(l:assigned_before_accessed, l:var)
+            endif
+        endfor
+    endfor
+    return l:results
+endfunction
+
+function! GetUsedVariablesForLine(line)
+    let l:line_data = {"assigned_vars":[], "accessed_vars": []}
+    let l:line_parts = split(a:line, '=')
+    if len(l:line_parts) < 1
+        return l:line_data
+    endif
+    let l:accessor_part = l:line_parts[0]
+    let l:assignment_part = ""
+    " For now, assume only 2 parts match.
+    " Cases that need to be handled are things like == or !=
+    if len(l:line_parts) > 1
+        let l:assignment_part = l:line_parts[0]
+        let l:accessor_part = l:line_parts[1]
+    endif
+    let l:count = 1
+    while matchstr(l:accessor_part,'$[0-9a-zA-Z_]\+',0,l:count) != ""
+        call add(l:line_data.accessed_vars,matchstr(l:accessor_part,'$[0-9a-zA-Z_]\+',0,l:count))
+        let l:count = l:count + 1
+    endwhile
+    call add(l:line_data.assigned_vars,matchstr(l:assignment_part,'$[0-9a-zA-Z_]\+'))
+
+    return l:line_data
+endfunction
+
+" Used for rapid testing. Reload and run the command immediately displaying
+" the results in a temp buffer
+"nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/code-cuts.vim<cr>:call Testit()<cr>
+function! Testit()
+    let g:test_lines = [
+                \ "            $param1->callMethod();",
+                \ "            $something = $param2 + $param3;",
+                \ "            $new_var = $something + 1;",
+                \ "            $param2 = $something + 1;",
+                \ "$param4->callIt($param5);",
+                \ "$do_it = $this->thing;",
+                \ "$more_stuff->doSomething();"
+                \ ]
+    let g:result = GetRequiredFunctionParameters(g:test_lines)
+
+    let g:test_buffer_name = "__TEST_BUFFER__"
+    if bufexists(g:test_buffer_name)
+        execute "normal! :".bufwinnr(g:test_buffer_name)."wincmd w\<CR>"
+    else
+        execute "normal! :vsplit ".g:test_buffer_name."\<CR>"
+    endif
+    normal! ggdG
+    setlocal filetype=testbuffer
+    setlocal buftype=nofile
+    call append(0,g:result)
+endfunction
