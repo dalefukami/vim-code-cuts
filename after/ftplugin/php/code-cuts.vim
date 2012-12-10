@@ -130,7 +130,7 @@ endfunction
 function! GetFunctionExtractionComponents(text, method_name)
     let lines = split(a:text, "\n")
     let l:params = GetRequiredFunctionParameters(split(a:text,"\n"))
-    let method_call = '$thi>'.a:method_name."(".join(l:params,",").")"
+    let method_call = '$this->'.a:method_name."(".join(l:params,",").")"
     let is_assignment = 0
     if( len(lines) > 1 )
         let last_line = lines[-1]
