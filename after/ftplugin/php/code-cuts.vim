@@ -120,9 +120,7 @@ function! ExtractFunction(type, ...)
     silent execute "normal! =a{"
 endfunction
 
-" TODO: Return to spot where text was yanked or top of new method?
-" TODO: Handle ==, ===, !=, +=, etc in the yanked lines when calculating
-" required params
+" TODO: Return to spot where text was yanked or top of new method? (Perhaps set marks or possibly just ensure that '' will get to the other one)
 " TODO: Play nice
 "       - Restore register q
 "       - Restore previous search expression
@@ -137,7 +135,7 @@ function! GetFunctionExtractionComponents(text, method_name)
         " Possible problem with == in the last line?
         let pieces = split(last_line, "=")
         if( len(pieces) > 1 )
-            let method_call = pieces[0].' = '.method_call
+            let method_call = substitute(pieces[0],'\s\+$','','').' = '.method_call
             let pieces = pieces[1:]
             let lines[-1] = join(pieces, "=")
             let is_assignment = 1
