@@ -158,7 +158,7 @@ function! GetRequiredFunctionParameters(lines)
     let l:accessed_before_assigned = []
     for l:info in l:line_info
         for l:var in l:info.accessed_vars
-            if index(l:assigned_before_accessed, l:var) < 0
+            if index(l:assigned_before_accessed, l:var) < 0 && index(l:accessed_before_assigned, l:var) < 0
                 if l:var ==# "$this"
                 else
                     call add(l:results, l:var)
@@ -210,7 +210,9 @@ function! Testit()
                 \ "            $param2 = $something + 1;",
                 \ "$param4->callIt($param5);",
                 \ "$do_it = $this->thing;",
-                \ "$more_stuff->doSomething();"
+                \ "$more_stuff->doSomething();",
+                \ "$test->blah($new_param);",
+                \ "$test->blah($new_param);",
                 \ ]
     let g:result = GetRequiredFunctionParameters(g:test_lines)
 
