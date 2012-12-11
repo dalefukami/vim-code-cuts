@@ -229,3 +229,39 @@ function! Testit()
     setlocal buftype=nofile
     call append(0,g:result)
 endfunction
+
+" Replace With Variable {{{ 2
+nnoremap <silent> <leader>rrwv :set operatorfunc=ReplaceWithVariable<CR>g@
+vnoremap <silent> <leader>rrwv :<c-u>call ReplaceWithVariable(visualmode())<cr>
+
+" TODO: Replace all occurances of the text inside the method
+function! ReplaceWithVariable(type, ...)
+    if IsMultiLine(a:type)
+        echom "ReplaceWithVariable is only available with single line selections"
+        return
+    endif
+
+    let l:new_name = input("Enter new variable name: ")
+    let l:new_name = "$".substitute(l:new_name,"^$","","")
+
+    " Select the correct text
+    if a:type ==# 'char'
+        silent execute "normal! `[v`]"
+    else
+        silent execute "normal! `<v`>"
+    endif
+
+    execute 'normal! "qc'.l:new_name."\<esc>"
+    call GoToStartOfCurrentFunction()
+    execute "normal! o".l:new_name.' = '.@q.';'
+endfunction
+
+" Utility Functions {{{1
+
+function! IsMultiLine(type)
+    return a:type ==# 'line' || a:type ==# 'V' || (a:type ==# 'v' && line("'<") != line("'>"))
+endfunction
+
+function! GoToStartOfCurrentFunction()
+    execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\w*\s*('."\<cr>"
+endfunction
