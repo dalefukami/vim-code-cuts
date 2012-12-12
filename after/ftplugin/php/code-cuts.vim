@@ -1,9 +1,14 @@
 " Operator-Pendings {{{1
-" Around Function (php) {{{2
+" Around Function {{{2
 " TODO genericize the function detection for different file types?
 " TODO restore the old search value
+"TODO: Make around function take the newline above function if it's empty
 onoremap <buffer> af :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*('."\r".'0V/{'."\r".'%'<cr>
 vnoremap <buffer> af :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*('."\r".'0V/{'."\r".'%'<cr>
+
+" Inside Function {{{2
+onoremap <buffer> if :<c-u>execute "normal! :call GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"<cr>
+vnoremap <buffer> if :<c-u>execute "normal! :call GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"<cr>
 
 " Function Name (php) {{{2
 onoremap ifn :<c-u>execute 'normal! ?\<function\>\s*&*\s*\zs\w*\ze\s*('."\r".'ve'<cr>
