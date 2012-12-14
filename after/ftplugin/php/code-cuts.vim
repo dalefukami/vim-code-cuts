@@ -7,8 +7,12 @@ onoremap <buffer> afb :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*('."\r".
 vnoremap <buffer> afb :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*('."\r".'0V/{'."\r".'%'<cr>
 
 " Inside Function Body {{{2
-onoremap <buffer> ifb :<c-u>execute "normal! :call GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"<cr>
-vnoremap <buffer> ifb :<c-u>execute "normal! :call GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"<cr>
+onoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
+vnoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
+
+function! SelectInsideFunctionBody()
+    execute "normal! :call GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
+endfunction
 
 " Function Name (php) {{{2
 onoremap ifn :<c-u>execute 'normal! ?\<function\>\s*&*\s*\zs\w*\ze\s*('."\r".'ve'<cr>
@@ -235,11 +239,11 @@ function! Testit()
     call append(0,g:result)
 endfunction
 
-" Replace With Variable {{{ 2
+" Replace With Variable {{{2
 nnoremap <silent> <leader>rrwv :set operatorfunc=ReplaceWithVariable<CR>g@
 vnoremap <silent> <leader>rrwv :<c-u>call ReplaceWithVariable(visualmode())<cr>
 
-" TODO: Replace all occurances of the text inside the method
+" TODO: Trim whitespace of selected text prior to doing search/replace?
 function! ReplaceWithVariable(type, ...)
     if IsMultiLine(a:type)
         echom "ReplaceWithVariable is only available with single line selections"
@@ -257,6 +261,8 @@ function! ReplaceWithVariable(type, ...)
     endif
 
     execute 'normal! "qc'.l:new_name."\<esc>"
+    call SelectInsideFunctionBody()
+    execute 'normal! :s/'.@q.'/'.l:new_name.'/g'."\<cr>"
     call GoToStartOfCurrentFunction()
     execute "normal! o".l:new_name.' = '.@q.';'
 endfunction
