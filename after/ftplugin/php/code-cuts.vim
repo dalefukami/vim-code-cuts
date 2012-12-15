@@ -11,29 +11,29 @@ if !exists('g:codecuts_refactor_map_prefix')
     let g:codecuts_refactor_map_prefix = '<leader>r'
 endif
 
-function! CreateOperatorMapping(mapping, function_name)
-    execute "nnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":set operatorfunc=".a:function_name."<CR>g@"
-    execute "vnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call ".a:function_name."(visualmode())<CR>"
+function! s:CreateOperatorMapping(mapping, function_name)
+    execute "nnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":set operatorfunc=<SID>".a:function_name."<CR>g@"
+    execute "vnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call <SID>".a:function_name."(visualmode())<CR>"
 endfunction
 
 " Motion (Operator-Pending) Mappings {{{1
 if g:codecuts_map_motions
-    onoremap <buffer> afb :<c-u>call SelectAroundFunctionBody()<cr>
-    vnoremap <buffer> afb :<c-u>call SelectAroundFunctionBody()<cr>
-    onoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
-    vnoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
-    onoremap <buffer> ifn :<c-u>call SelectInsideFunctionName()<cr>
-    vnoremap <buffer> ifn :<c-u>call SelectInsideFunctionName()<cr>
-    onoremap <buffer> ifp :<c-u>call SelectInsideFunctionParameters()<cr>
-    vnoremap <buffer> ifp :<c-u>call SelectInsideFunctionParameters()<cr>
+    onoremap <buffer> afb :<c-u>call <SID>SelectAroundFunctionBody()<cr>
+    vnoremap <buffer> afb :<c-u>call <SID>SelectAroundFunctionBody()<cr>
+    onoremap <buffer> ifb :<c-u>call <SID>SelectInsideFunctionBody()<cr>
+    vnoremap <buffer> ifb :<c-u>call <SID>SelectInsideFunctionBody()<cr>
+    onoremap <buffer> ifn :<c-u>call <SID>SelectInsideFunctionName()<cr>
+    vnoremap <buffer> ifn :<c-u>call <SID>SelectInsideFunctionName()<cr>
+    onoremap <buffer> ifp :<c-u>call <SID>SelectInsideFunctionParameters()<cr>
+    vnoremap <buffer> ifp :<c-u>call <SID>SelectInsideFunctionParameters()<cr>
 endif
 
 " Operator Mappings {{{1
 if g:codecuts_map_operators
-    call CreateOperatorMapping("cf", "CreateFunction")
-    call CreateOperatorMapping("ci", "CreateIf")
-    call CreateOperatorMapping("ef", "ExtractFunction")
-    call CreateOperatorMapping("rwv", "ReplaceWithVariable")
+    call <SID>CreateOperatorMapping("cf", "CreateFunction")
+    call <SID>CreateOperatorMapping("ci", "CreateIf")
+    call <SID>CreateOperatorMapping("ef", "ExtractFunction")
+    call <SID>CreateOperatorMapping("rwv", "ReplaceWithVariable")
 endif
 
 " Functions {{{1
@@ -42,23 +42,23 @@ endif
 " TODO genericize the function detection for different file types?
 " TODO restore the old search value
 " TODO: Make around function take the newline above function if it's empty
-function! SelectAroundFunctionBody()
-    execute "normal! :call GoToStartOfCurrentFunction()\r".'0V/{'."\r".'%'
+function! s:SelectAroundFunctionBody()
+    execute "normal! :call <SID>GoToStartOfCurrentFunction()\r".'0V/{'."\r".'%'
 endfunction
 
 " Inside Function Body {{{3
-function! SelectInsideFunctionBody()
-    execute "normal! :call GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
+function! s:SelectInsideFunctionBody()
+    execute "normal! :call <SID>GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
 endfunction
 
 " Inside Function Name (php) {{{3
-function! SelectInsideFunctionName()
-    execute "normal! :call GoToStartOfCurrentFunction()\rve"
+function! s:SelectInsideFunctionName()
+    execute "normal! :call <SID>GoToStartOfCurrentFunction()\rve"
 endfunction
 
 " Function Parameters (php) {{{3
-function! SelectInsideFunctionParameters()
-    execute "normal! :call GoToStartOfCurrentFunction()\rf(lvt)"
+function! s:SelectInsideFunctionParameters()
+    execute "normal! :call <SID>GoToStartOfCurrentFunction()\rf(lvt)"
 endfunction
 
 " Operators {{{2
@@ -75,11 +75,11 @@ else
     let b:snippet_code = ""
 endif
 
-function! CreateFunction(type, ...)
-    call WrapLines(a:type, b:code_cuts_function_header, 1)
+function! s:CreateFunction(type, ...)
+    call <SID>WrapLines(a:type, b:code_cuts_function_header, 1)
 endfunction
 
-function! WrapLines(type, header, expand_snippet)
+function! s:WrapLines(type, header, expand_snippet)
     if a:type ==# 'char' || a:type ==# 'line'
         " Mimic visual mode for consistency
         echom "mode: ".a:type
@@ -100,12 +100,12 @@ else
     let b:code_cuts_if_header = 'if() {'
 endif
 
-function! CreateIf(type, ...)
-    call WrapLines(a:type, b:code_cuts_if_header, 1)
+function! s:CreateIf(type, ...)
+    call <SID>WrapLines(a:type, b:code_cuts_if_header, 1)
 endfunction
 
 " Extract function {{{3
-function! ExtractFunction(type, ...)
+function! s:ExtractFunction(type, ...)
     let l:new_name = input("Enter new function name: ")
     let l:append_semicolon_to_new_method = 0
     let l:append_semicolon_to_method_call = 0
@@ -128,7 +128,7 @@ function! ExtractFunction(type, ...)
     endif
 
     execute 'normal! "qy'
-    let l:components = GetFunctionExtractionComponents(@q,l:new_name)
+    let l:components = <SID>GetFunctionExtractionComponents(@q,l:new_name)
     " Change the text to the new call
     let l:postfix = l:append_semicolon_to_method_call ? ';' : ''
     silent execute 'normal! gvc'.l:components.method_call.l:postfix."\<esc>=="
@@ -145,7 +145,7 @@ function! ExtractFunction(type, ...)
     s/\s\+$//e
 
     " Wrap with the function
-    call WrapLines(visualmode(), l:components.function_header, 0)
+    call <SID>WrapLines(visualmode(), l:components.function_header, 0)
 
     " Add a semicolon to the last line if deemed necessary
     let l:postfix = l:append_semicolon_to_new_method ? ';' : ''
@@ -165,31 +165,31 @@ endfunction
 "       - Restore register q
 "       - Restore previous search expression
 
-function! GetFunctionExtractionComponents(text, method_name)
-    let lines = split(a:text, "\n")
-    let l:params = GetRequiredFunctionParameters(split(a:text,"\n"))
-    let method_call = '$this->'.a:method_name."(".join(l:params,",").")"
-    let is_assignment = 0
-    if( len(lines) > 1 )
-        let last_line = lines[-1]
+function! s:GetFunctionExtractionComponents(text, method_name)
+    let l:lines = split(a:text, "\n")
+    let l:params = <SID>GetRequiredFunctionParameters(split(a:text,"\n"))
+    let l:method_call = '$this->'.a:method_name."(".join(l:params,",").")"
+    let l:is_assignment = 0
+    if( len(l:lines) > 1 )
+        let l:last_line = l:lines[-1]
         " Possible problem with == in the last line?
-        let pieces = split(last_line, "=")
-        if( len(pieces) > 1 )
-            let method_call = substitute(pieces[0],'\s\+$','','').' = '.method_call
-            let pieces = pieces[1:]
-            let lines[-1] = join(pieces, "=")
-            let is_assignment = 1
+        let l:pieces = split(l:last_line, "=")
+        if( len(l:pieces) > 1 )
+            let l:method_call = substitute(l:pieces[0],'\s\+$','','').' = '.l:method_call
+            let l:pieces = l:pieces[1:]
+            let l:lines[-1] = join(l:pieces, "=")
+            let l:is_assignment = 1
         endif
     endif
 
     let l:function_header = 'private function '.a:method_name.'('.join(l:params,",").') {'
-    return {"method_call": method_call, "method_body": join(lines,"\n"), "is_assignment": is_assignment, "function_header": l:function_header}
+    return {"method_call": l:method_call, "method_body": join(l:lines,"\n"), "is_assignment": l:is_assignment, "function_header": l:function_header}
 endfunction
 
-function! GetRequiredFunctionParameters(lines)
+function! s:GetRequiredFunctionParameters(lines)
     let l:line_info = []
     for l:line in a:lines
-        let l:line_info = add(l:line_info, GetUsedVariablesForLine(l:line))
+        let l:line_info = add(l:line_info, <SID>GetUsedVariablesForLine(l:line))
     endfor
     let l:results = []
     let l:assigned_before_accessed = []
@@ -213,7 +213,7 @@ function! GetRequiredFunctionParameters(lines)
     return l:results
 endfunction
 
-function! GetUsedVariablesForLine(line)
+function! s:GetUsedVariablesForLine(line)
     let l:line_data = {"assigned_vars":[], "accessed_vars": []}
     let l:line_parts = split(a:line, '[^=+-/*!><]\zs=\ze[^=]')
     if len(l:line_parts) < 1
@@ -240,8 +240,8 @@ endfunction
 
 " Replace With Variable {{{3
 " TODO: Trim whitespace of selected text prior to doing search/replace?
-function! ReplaceWithVariable(type, ...)
-    if IsMultiLine(a:type)
+function! s:ReplaceWithVariable(type, ...)
+    if <SID>IsMultiLine(a:type)
         echom "ReplaceWithVariable is only available with single line selections"
         return
     endif
@@ -257,19 +257,19 @@ function! ReplaceWithVariable(type, ...)
     endif
 
     execute 'normal! "qc'.l:new_name."\<esc>"
-    call SelectInsideFunctionBody()
+    call <SID>SelectInsideFunctionBody()
     execute 'normal! :s/'.@q.'/'.l:new_name.'/g'."\<cr>"
-    call GoToStartOfCurrentFunction()
+    call <SID>GoToStartOfCurrentFunction()
     execute "normal! o".l:new_name.' = '.@q.';'
 endfunction
 
 " Utility Functions {{{1
 
-function! IsMultiLine(type)
+function! s:IsMultiLine(type)
     return a:type ==# 'line' || a:type ==# 'V' || (a:type ==# 'v' && line("'<") != line("'>"))
 endfunction
 
-function! GoToStartOfCurrentFunction()
+function! s:GoToStartOfCurrentFunction()
     execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\zs\w*\ze\s*('."\<cr>"
 endfunction
 
@@ -277,7 +277,7 @@ endfunction
 " Used for rapid testing. Reload and run the command immediately displaying
 " the results in a temp buffer
 "nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/code-cuts.vim<cr>:call Testit()<cr>
-function! Testit()
+function! s:Testit()
     let g:test_lines = [
                 \ "            $param1->callMethod();",
                 \ "            $something = $param2 + $param3;",
@@ -293,7 +293,7 @@ function! Testit()
                 \ "if( $condition5 != $condition6 ) {",
                 \ "$assign1=$param6;",
                 \ ]
-    let g:result = GetRequiredFunctionParameters(g:test_lines)
+    let g:result = <SID>GetRequiredFunctionParameters(g:test_lines)
 
     let g:test_buffer_name = "__TEST_BUFFER__"
     if bufexists(g:test_buffer_name)
