@@ -257,8 +257,10 @@ function! s:ReplaceWithVariable(type, ...)
     endif
 
     execute 'normal! "qc'.l:new_name."\<esc>"
+    " Replace all other occurances of the extracted content
     call <SID>SelectInsideFunctionBody()
-    execute 'normal! :s/'.@q.'/'.l:new_name.'/g'."\<cr>"
+    execute 'normal! :s/'.@q.'/'.l:new_name.'/ge'."\<cr>"
+    " Create variable declaration
     call <SID>GoToStartOfCurrentFunction()
     execute "normal! o".l:new_name.' = '.@q.';'
 endfunction
