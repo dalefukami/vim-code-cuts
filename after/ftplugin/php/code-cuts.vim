@@ -1,36 +1,39 @@
 " General Configuration {{{1
-if !exists('g:codecuts_map_keys')
-    let g:codecuts_map_keys = 1
+if !exists('g:codecuts_map_motions')
+    let g:codecuts_map_motions = 1
 endif
 
-" Mappings {{{1
-if g:codecuts_map_keys
-    " Operator-Pendings {{{2
+if !exists('g:codecuts_map_operators')
+    let g:codecuts_map_operators = 1
+endif
+
+if !exists('g:codecuts_refactor_map_prefix')
+    let g:codecuts_refactor_map_prefix = '<leader>r'
+endif
+
+function! CreateOperatorMapping(mapping, function_name)
+    execute "nnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":set operatorfunc=".a:function_name."<CR>g@"
+    execute "vnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call ".a:function_name."(visualmode())<CR>"
+endfunction
+
+" Motion (Operator-Pending) Mappings {{{1
+if g:codecuts_map_motions
     onoremap <buffer> afb :<c-u>call SelectAroundFunctionBody()<cr>
     vnoremap <buffer> afb :<c-u>call SelectAroundFunctionBody()<cr>
-
     onoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
     vnoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
-
     onoremap <buffer> ifn :<c-u>call SelectInsideFunctionName()<cr>
     vnoremap <buffer> ifn :<c-u>call SelectInsideFunctionName()<cr>
-
     onoremap <buffer> ifp :<c-u>call SelectInsideFunctionParameters()<cr>
     vnoremap <buffer> ifp :<c-u>call SelectInsideFunctionParameters()<cr>
+endif
 
-    " Operators {{{2
-    nnoremap <buffer> <leader>cf :set operatorfunc=CreateFunction<CR>g@
-    vnoremap <buffer> <leader>cf :<c-u>call CreateFunction(visualmode())<cr>
-
-    nnoremap <silent> <leader>ci :set operatorfunc=CreateIf<CR>g@
-    vnoremap <silent> <leader>ci :<c-u>call CreateIf(visualmode())<cr>
-
-    nnoremap <silent> <leader>ref :set operatorfunc=ExtractFunction<CR>g@
-    vnoremap <silent> <leader>ref :<c-u>call ExtractFunction(visualmode())<cr>
-
-    nnoremap <silent> <leader>rrwv :set operatorfunc=ReplaceWithVariable<CR>g@
-    vnoremap <silent> <leader>rrwv :<c-u>call ReplaceWithVariable(visualmode())<cr>
-    " }}}
+" Operator Mappings {{{1
+if g:codecuts_map_operators
+    call CreateOperatorMapping("cf", "CreateFunction")
+    call CreateOperatorMapping("ci", "CreateIf")
+    call CreateOperatorMapping("ef", "ExtractFunction")
+    call CreateOperatorMapping("rwv", "ReplaceWithVariable")
 endif
 
 " Functions {{{1
