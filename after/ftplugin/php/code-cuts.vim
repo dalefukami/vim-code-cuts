@@ -1,31 +1,68 @@
-" Operator-Pendings {{{1
-" Around Function Body {{{2
+" General Configuration {{{1
+if !exists('g:codecuts_map_keys')
+    let g:codecuts_map_keys = 1
+endif
+
+" Mappings {{{1
+if g:codecuts_map_keys
+    " Operator-Pendings {{{2
+    onoremap <buffer> afb :<c-u>call SelectAroundFunctionBody()<cr>
+    vnoremap <buffer> afb :<c-u>call SelectAroundFunctionBody()<cr>
+
+    onoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
+    vnoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
+
+    onoremap <buffer> ifn :<c-u>call SelectInsideFunctionName()<cr>
+    vnoremap <buffer> ifn :<c-u>call SelectInsideFunctionName()<cr>
+
+    onoremap <buffer> ifp :<c-u>call SelectInsideFunctionParameters()<cr>
+    vnoremap <buffer> ifp :<c-u>call SelectInsideFunctionParameters()<cr>
+
+    " Operators {{{2
+    nnoremap <buffer> <leader>cf :set operatorfunc=CreateFunction<CR>g@
+    vnoremap <buffer> <leader>cf :<c-u>call CreateFunction(visualmode())<cr>
+
+    nnoremap <silent> <leader>ci :set operatorfunc=CreateIf<CR>g@
+    vnoremap <silent> <leader>ci :<c-u>call CreateIf(visualmode())<cr>
+
+    nnoremap <silent> <leader>ref :set operatorfunc=ExtractFunction<CR>g@
+    vnoremap <silent> <leader>ref :<c-u>call ExtractFunction(visualmode())<cr>
+
+    nnoremap <silent> <leader>rrwv :set operatorfunc=ReplaceWithVariable<CR>g@
+    vnoremap <silent> <leader>rrwv :<c-u>call ReplaceWithVariable(visualmode())<cr>
+    " }}}
+endif
+
+" Functions {{{1
+" Operator-Pendings {{{2
+" Around Function Body {{{3
 " TODO genericize the function detection for different file types?
 " TODO restore the old search value
-"TODO: Make around function take the newline above function if it's empty
-onoremap <buffer> afb :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*('."\r".'0V/{'."\r".'%'<cr>
-vnoremap <buffer> afb :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*('."\r".'0V/{'."\r".'%'<cr>
+" TODO: Make around function take the newline above function if it's empty
+function! SelectAroundFunctionBody()
+    execute "normal! :call GoToStartOfCurrentFunction()\r".'0V/{'."\r".'%'
+endfunction
 
-" Inside Function Body {{{2
-onoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
-vnoremap <buffer> ifb :<c-u>call SelectInsideFunctionBody()<cr>
-
+" Inside Function Body {{{3
 function! SelectInsideFunctionBody()
     execute "normal! :call GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
 endfunction
 
-" Function Name (php) {{{2
-onoremap ifn :<c-u>execute 'normal! ?\<function\>\s*&*\s*\zs\w*\ze\s*('."\r".'ve'<cr>
+" Inside Function Name (php) {{{3
+function! SelectInsideFunctionName()
+    execute "normal! :call GoToStartOfCurrentFunction()\rve"
+endfunction
 
-" Function Parameters (php) {{{2
-" Note we insert an extra character to account for empty param lists
-onoremap ifp :<c-u>execute 'normal! ?\<function\>\s*&*\s*\w*\s*\zs('."\r".'aj'."\evt)"<cr>
+" Function Parameters (php) {{{3
+function! SelectInsideFunctionParameters()
+    execute "normal! :call GoToStartOfCurrentFunction()\rf(lvt)"
+endfunction
 
-" Operators {{{1
+" Operators {{{2
 
 let s:snip_mate_exists = exists('*MakeSnip')
 
-" Create function {{{2
+" Create function {{{3
 if s:snip_mate_exists
     let b:code_cuts_function_header = 'function_header'
     call MakeSnip('php', b:code_cuts_function_header,'${1:private }function ${2:FunctionName}(${3}) {')
@@ -34,9 +71,6 @@ else
     let b:code_cuts_function_header = 'private function function_name() {'
     let b:snippet_code = ""
 endif
-
-nnoremap <silent> <leader>cf :set operatorfunc=CreateFunction<CR>g@
-vnoremap <silent> <leader>cf :<c-u>call CreateFunction(visualmode())<cr>
 
 function! CreateFunction(type, ...)
     call WrapLines(a:type, b:code_cuts_function_header, 1)
@@ -55,7 +89,7 @@ function! WrapLines(type, header, expand_snippet)
     execute "normal! :\<c-u>\<cr>`>o}\<esc>`<O".a:header."\<esc>".l:snippet_code
 endfunction
 
-" Create if statement {{{2
+" Create if statement {{{3
 if s:snip_mate_exists
     let b:code_cuts_if_header = 'if_header'
     call MakeSnip('php', b:code_cuts_if_header,'if( ${1:condition} ) {')
@@ -63,17 +97,11 @@ else
     let b:code_cuts_if_header = 'if() {'
 endif
 
-nnoremap <silent> <leader>ci :set operatorfunc=CreateIf<CR>g@
-vnoremap <silent> <leader>ci :<c-u>call CreateIf(visualmode())<cr>
-
 function! CreateIf(type, ...)
     call WrapLines(a:type, b:code_cuts_if_header, 1)
 endfunction
 
-" Extract function {{{2
-nnoremap <silent> <leader>ref :set operatorfunc=ExtractFunction<CR>g@
-vnoremap <silent> <leader>ref :<c-u>call ExtractFunction(visualmode())<cr>
-
+" Extract function {{{3
 function! ExtractFunction(type, ...)
     let l:new_name = input("Enter new function name: ")
     let l:append_semicolon_to_new_method = 0
@@ -206,43 +234,8 @@ function! GetUsedVariablesForLine(line)
     return l:line_data
 endfunction
 
-" Used for rapid testing. Reload and run the command immediately displaying
-" the results in a temp buffer
-"nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/code-cuts.vim<cr>:call Testit()<cr>
-function! Testit()
-    let g:test_lines = [
-                \ "            $param1->callMethod();",
-                \ "            $something = $param2 + $param3;",
-                \ "            $new_var = $something + 1;",
-                \ "            $param2 = $something + 1;",
-                \ "$param4->callIt($param5);",
-                \ "$do_it = $this->thing;",
-                \ "$more_stuff->doSomething();",
-                \ "$test->blah($new_param);",
-                \ "$test->blah($new_param);",
-                \ "if( $condition1 === $condition2 ) {",
-                \ "if( $condition3 == $condition4 ) {",
-                \ "if( $condition5 != $condition6 ) {",
-                \ "$assign1=$param6;",
-                \ ]
-    let g:result = GetRequiredFunctionParameters(g:test_lines)
 
-    let g:test_buffer_name = "__TEST_BUFFER__"
-    if bufexists(g:test_buffer_name)
-        execute "normal! :".bufwinnr(g:test_buffer_name)."wincmd w\<CR>"
-    else
-        execute "normal! :vsplit ".g:test_buffer_name."\<CR>"
-    endif
-    normal! ggdG
-    setlocal filetype=testbuffer
-    setlocal buftype=nofile
-    call append(0,g:result)
-endfunction
-
-" Replace With Variable {{{2
-nnoremap <silent> <leader>rrwv :set operatorfunc=ReplaceWithVariable<CR>g@
-vnoremap <silent> <leader>rrwv :<c-u>call ReplaceWithVariable(visualmode())<cr>
-
+" Replace With Variable {{{3
 " TODO: Trim whitespace of selected text prior to doing search/replace?
 function! ReplaceWithVariable(type, ...)
     if IsMultiLine(a:type)
@@ -274,5 +267,39 @@ function! IsMultiLine(type)
 endfunction
 
 function! GoToStartOfCurrentFunction()
-    execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\w*\s*('."\<cr>"
+    execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\zs\w*\ze\s*('."\<cr>"
+endfunction
+
+" Testing {{{1
+" Used for rapid testing. Reload and run the command immediately displaying
+" the results in a temp buffer
+"nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/code-cuts.vim<cr>:call Testit()<cr>
+function! Testit()
+    let g:test_lines = [
+                \ "            $param1->callMethod();",
+                \ "            $something = $param2 + $param3;",
+                \ "            $new_var = $something + 1;",
+                \ "            $param2 = $something + 1;",
+                \ "$param4->callIt($param5);",
+                \ "$do_it = $this->thing;",
+                \ "$more_stuff->doSomething();",
+                \ "$test->blah($new_param);",
+                \ "$test->blah($new_param);",
+                \ "if( $condition1 === $condition2 ) {",
+                \ "if( $condition3 == $condition4 ) {",
+                \ "if( $condition5 != $condition6 ) {",
+                \ "$assign1=$param6;",
+                \ ]
+    let g:result = GetRequiredFunctionParameters(g:test_lines)
+
+    let g:test_buffer_name = "__TEST_BUFFER__"
+    if bufexists(g:test_buffer_name)
+        execute "normal! :".bufwinnr(g:test_buffer_name)."wincmd w\<CR>"
+    else
+        execute "normal! :vsplit ".g:test_buffer_name."\<CR>"
+    endif
+    normal! ggdG
+    setlocal filetype=testbuffer
+    setlocal buftype=nofile
+    call append(0,g:result)
 endfunction
