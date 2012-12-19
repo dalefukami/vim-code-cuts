@@ -239,7 +239,6 @@ endfunction
 
 
 " Replace With Variable {{{3
-" TODO: Trim whitespace of selected text prior to doing search/replace?
 function! s:ReplaceWithVariable(type, ...)
     if <SID>IsMultiLine(a:type)
         echom "ReplaceWithVariable is only available with single line selections"
@@ -249,20 +248,24 @@ function! s:ReplaceWithVariable(type, ...)
     let l:new_name = input("Enter new variable name: ")
     let l:new_name = "$".substitute(l:new_name,"^$","","")
 
-    " Select the correct text
+    " Select the text
     if a:type ==# 'char'
         silent execute "normal! `[v`]"
     else
         silent execute "normal! `<v`>"
     endif
 
-    execute 'normal! "qc'.l:new_name."\<esc>"
-    " Replace all other occurances of the extracted content
+    " Get the text
+    execute 'normal! "qy'
+    let l:extracted_text = <SID>Trim(@q)
+
+    " Replace all occurances of the extracted content
     call <SID>SelectInsideFunctionBody()
-    execute 'normal! :s/'.@q.'/'.l:new_name.'/ge'."\<cr>"
+    execute 'normal! :s/'.l:extracted_text.'/'.l:new_name.'/ge'."\<cr>"
+
     " Create variable declaration
     call <SID>GoToStartOfCurrentFunction()
-    execute "normal! o".l:new_name.' = '.@q.';'
+    execute "normal! o".l:new_name.' = '.l:extracted_text.';'
 endfunction
 
 " Utility Functions {{{1
@@ -273,6 +276,10 @@ endfunction
 
 function! s:GoToStartOfCurrentFunction()
     execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\zs\w*\ze\s*('."\<cr>"
+endfunction
+
+function! s:Trim(the_string)
+    return substitute(a:the_string,'\s\+$','','')
 endfunction
 
 " Testing {{{1
