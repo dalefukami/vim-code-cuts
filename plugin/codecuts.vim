@@ -51,3 +51,13 @@ function! codecuts#ReplaceWithVariable(type, ...)
     call codecuts#GoToStartOfCurrentFunction()
     execute "normal! o".l:new_name.' = '.l:extracted_text.';'
 endfunction
+
+" Utility Functions {{{1
+
+function! codecuts#IsMultiLine(type)
+    return a:type ==# 'line' || a:type ==# 'V' || (a:type ==# 'v' && line("'<") != line("'>"))
+endfunction
+
+function! codecuts#Trim(the_string)
+    return substitute(a:the_string,'\s\+$','','')
+endfunction

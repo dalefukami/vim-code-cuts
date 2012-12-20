@@ -222,16 +222,8 @@ endfunction
 
 " Utility Functions {{{1
 
-function! codecuts#IsMultiLine(type)
-    return a:type ==# 'line' || a:type ==# 'V' || (a:type ==# 'v' && line("'<") != line("'>"))
-endfunction
-
 function! codecuts#GoToStartOfCurrentFunction()
     execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\zs\w*\ze\s*('."\<cr>"
-endfunction
-
-function! codecuts#Trim(the_string)
-    return substitute(a:the_string,'\s\+$','','')
 endfunction
 
 function! codecuts#ConvertToVariableName(the_name)
