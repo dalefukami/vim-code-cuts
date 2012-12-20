@@ -246,7 +246,7 @@ function! s:ReplaceWithVariable(type, ...)
     endif
 
     let l:new_name = input("Enter new variable name: ")
-    let l:new_name = "$".substitute(l:new_name,"^$","","")
+    let l:new_name = <SID>ConvertToVariableName(l:new_name)
 
     " Select the text
     if a:type ==# 'char'
@@ -280,6 +280,10 @@ endfunction
 
 function! s:Trim(the_string)
     return substitute(a:the_string,'\s\+$','','')
+endfunction
+
+function! s:ConvertToVariableName(the_name)
+    return "$".substitute(a:the_name,"^\\$","","")
 endfunction
 
 " Testing {{{1
