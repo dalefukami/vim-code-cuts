@@ -230,6 +230,18 @@ function! codecuts#ConvertToVariableName_php(the_name)
     return "$".substitute(a:the_name,"^\\$","","")
 endfunction
 
+function! codecuts#FormatVariableAssignment_php(assignee,value)
+    return codecuts#ConvertToVariableName_php(a:assignee).' = '.a:value.';'
+endfunction
+
+function! codecuts#SelectReplaceWithVariableArea_php()
+    call codecuts#SelectInsideFunctionBody_php()
+endfunction
+
+function! codecuts#GoToVariableDeclarationLocation_php()
+    call codecuts#GoToStartOfCurrentFunction_php()
+endfunction
+
 " Testing {{{1
 " Used for rapid testing. Reload and run the command immediately displaying
 " the results in a temp buffer

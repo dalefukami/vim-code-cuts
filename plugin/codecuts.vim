@@ -12,8 +12,8 @@ if !exists('g:codecuts_refactor_map_prefix')
 endif
 
 function! codecuts#CreateOperatorMapping(mapping, function_name)
-    execute "nnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":set operatorfunc=codecuts#".a:function_name."<CR>g@"
-    execute "vnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call codecuts#".a:function_name."(visualmode())<CR>"
+    execute "nnoremap "  g:codecuts_refactor_map_prefix.a:mapping  ":set operatorfunc=codecuts#".a:function_name."<CR>g@"
+    execute "vnoremap "  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call codecuts#".a:function_name."(visualmode())<CR>"
 endfunction
 
 " Operator Mappings {{{1
@@ -30,7 +30,6 @@ function! codecuts#ReplaceWithVariable(type, ...)
     endif
 
     let l:new_name = input("Enter new variable name: ")
-    let l:new_name = <SID>CallFunction("ConvertToVariableName",l:new_name)
 
     " Select the text
     if a:type ==# 'char'
@@ -44,12 +43,13 @@ function! codecuts#ReplaceWithVariable(type, ...)
     let l:extracted_text = codecuts#Trim(@q)
 
     " Replace all occurances of the extracted content
-    call <SID>CallFunction("SelectInsideFunctionBody")
-    execute 'normal! :s/'.l:extracted_text.'/'.l:new_name.'/ge'."\<cr>"
+    let l:var_usage_name = <SID>CallFunction("ConvertToVariableName",l:new_name)
+    call <SID>CallFunction("SelectReplaceWithVariableArea")
+    execute 'normal! :s/'.l:extracted_text.'/'.l:var_usage_name.'/ge'."\<cr>"
 
     " Create variable declaration
-    call <SID>CallFunction("GoToStartOfCurrentFunction")
-    execute "normal! o".l:new_name.' = '.l:extracted_text.';'
+    call <SID>CallFunction("GoToVariableDeclarationLocation")
+    execute "normal! o".<SID>CallFunction("FormatVariableAssignment",l:new_name,l:extracted_text)
 endfunction
 
 " Utility Functions {{{1
@@ -59,7 +59,8 @@ function! codecuts#IsMultiLine(type)
 endfunction
 
 function! codecuts#Trim(the_string)
-    return substitute(a:the_string,'\s\+$','','')
+    let l:trimmed_string = substitute(a:the_string,'\s\+$','','')
+    return substitute(l:trimmed_string,'^\s\+','','')
 endfunction
 
 " Generate filetype specific function name
