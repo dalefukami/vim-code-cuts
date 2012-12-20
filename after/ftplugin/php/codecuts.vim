@@ -2,8 +2,8 @@
 if g:codecuts_map_motions
     onoremap <buffer> afb :<c-u>call codecuts#SelectAroundFunctionBody()<cr>
     vnoremap <buffer> afb :<c-u>call codecuts#SelectAroundFunctionBody()<cr>
-    onoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody()<cr>
-    vnoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody()<cr>
+    onoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody_php()<cr>
+    vnoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody_php()<cr>
     onoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
     vnoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
     onoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
@@ -24,22 +24,22 @@ endif
 " TODO restore the old search value
 " TODO: Make around function take the newline above function if it's empty
 function! codecuts#SelectAroundFunctionBody()
-    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\r".'0V/{'."\r".'%'
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction_php()\r".'0V/{'."\r".'%'
 endfunction
 
 " Inside Function Body {{{3
-function! codecuts#SelectInsideFunctionBody()
-    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
+function! codecuts#SelectInsideFunctionBody_php()
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction_php()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
 endfunction
 
 " Inside Function Name (php) {{{3
 function! codecuts#SelectInsideFunctionName()
-    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\rve"
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction_php()\rve"
 endfunction
 
 " Function Parameters (php) {{{3
 function! codecuts#SelectInsideFunctionParameters()
-    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\rf(lvt)"
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction_php()\rf(lvt)"
 endfunction
 
 " Operators {{{2
@@ -222,11 +222,11 @@ endfunction
 
 " Utility Functions {{{1
 
-function! codecuts#GoToStartOfCurrentFunction()
+function! codecuts#GoToStartOfCurrentFunction_php()
     execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\zs\w*\ze\s*('."\<cr>"
 endfunction
 
-function! codecuts#ConvertToVariableName(the_name)
+function! codecuts#ConvertToVariableName_php(the_name)
     return "$".substitute(a:the_name,"^\\$","","")
 endfunction
 

@@ -30,7 +30,7 @@ function! codecuts#ReplaceWithVariable(type, ...)
     endif
 
     let l:new_name = input("Enter new variable name: ")
-    let l:new_name = codecuts#ConvertToVariableName(l:new_name)
+    let l:new_name = <SID>CallFunction("ConvertToVariableName",l:new_name)
 
     " Select the text
     if a:type ==# 'char'
@@ -44,11 +44,11 @@ function! codecuts#ReplaceWithVariable(type, ...)
     let l:extracted_text = codecuts#Trim(@q)
 
     " Replace all occurances of the extracted content
-    call codecuts#SelectInsideFunctionBody()
+    call <SID>CallFunction("SelectInsideFunctionBody")
     execute 'normal! :s/'.l:extracted_text.'/'.l:new_name.'/ge'."\<cr>"
 
     " Create variable declaration
-    call codecuts#GoToStartOfCurrentFunction()
+    call <SID>CallFunction("GoToStartOfCurrentFunction")
     execute "normal! o".l:new_name.' = '.l:extracted_text.';'
 endfunction
 
@@ -60,4 +60,16 @@ endfunction
 
 function! codecuts#Trim(the_string)
     return substitute(a:the_string,'\s\+$','','')
+endfunction
+
+" Generate filetype specific function name
+function! s:FunctionName(function_name)
+    return "codecuts#".a:function_name."_".&filetype
+endfunction
+
+" Call a filetype specific function
+function! s:CallFunction(function_name,...)
+    let l:result = ''
+    execute 'normal! :let l:result = call("'.<SID>FunctionName(a:function_name).'",a:000)'."\r"
+    return l:result
 endfunction
