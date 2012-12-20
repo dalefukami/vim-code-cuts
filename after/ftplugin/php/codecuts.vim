@@ -11,29 +11,29 @@ if !exists('g:codecuts_refactor_map_prefix')
     let g:codecuts_refactor_map_prefix = '<leader>r'
 endif
 
-function! s:CreateOperatorMapping(mapping, function_name)
-    execute "nnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":set operatorfunc=<SID>".a:function_name."<CR>g@"
-    execute "vnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call <SID>".a:function_name."(visualmode())<CR>"
+function! codecuts#CreateOperatorMapping(mapping, function_name)
+    execute "nnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":set operatorfunc=codecuts#".a:function_name."<CR>g@"
+    execute "vnoremap <buffer>"  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call codecuts#".a:function_name."(visualmode())<CR>"
 endfunction
 
 " Motion (Operator-Pending) Mappings {{{1
 if g:codecuts_map_motions
-    onoremap <buffer> afb :<c-u>call <SID>SelectAroundFunctionBody()<cr>
-    vnoremap <buffer> afb :<c-u>call <SID>SelectAroundFunctionBody()<cr>
-    onoremap <buffer> ifb :<c-u>call <SID>SelectInsideFunctionBody()<cr>
-    vnoremap <buffer> ifb :<c-u>call <SID>SelectInsideFunctionBody()<cr>
-    onoremap <buffer> ifn :<c-u>call <SID>SelectInsideFunctionName()<cr>
-    vnoremap <buffer> ifn :<c-u>call <SID>SelectInsideFunctionName()<cr>
-    onoremap <buffer> ifp :<c-u>call <SID>SelectInsideFunctionParameters()<cr>
-    vnoremap <buffer> ifp :<c-u>call <SID>SelectInsideFunctionParameters()<cr>
+    onoremap <buffer> afb :<c-u>call codecuts#SelectAroundFunctionBody()<cr>
+    vnoremap <buffer> afb :<c-u>call codecuts#SelectAroundFunctionBody()<cr>
+    onoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody()<cr>
+    vnoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody()<cr>
+    onoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
+    vnoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
+    onoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
+    vnoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
 endif
 
 " Operator Mappings {{{1
 if g:codecuts_map_operators
-    call <SID>CreateOperatorMapping("cf", "CreateFunction")
-    call <SID>CreateOperatorMapping("ci", "CreateIf")
-    call <SID>CreateOperatorMapping("ef", "ExtractFunction")
-    call <SID>CreateOperatorMapping("rwv", "ReplaceWithVariable")
+    call codecuts#CreateOperatorMapping("cf", "CreateFunction")
+    call codecuts#CreateOperatorMapping("ci", "CreateIf")
+    call codecuts#CreateOperatorMapping("ef", "ExtractFunction")
+    call codecuts#CreateOperatorMapping("rwv", "ReplaceWithVariable")
 endif
 
 " Functions {{{1
@@ -42,23 +42,23 @@ endif
 " TODO genericize the function detection for different file types?
 " TODO restore the old search value
 " TODO: Make around function take the newline above function if it's empty
-function! s:SelectAroundFunctionBody()
-    execute "normal! :call <SID>GoToStartOfCurrentFunction()\r".'0V/{'."\r".'%'
+function! codecuts#SelectAroundFunctionBody()
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\r".'0V/{'."\r".'%'
 endfunction
 
 " Inside Function Body {{{3
-function! s:SelectInsideFunctionBody()
-    execute "normal! :call <SID>GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
+function! codecuts#SelectInsideFunctionBody()
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\r0".'/{'."\rj0Vk0".'/{'."\r%k"
 endfunction
 
 " Inside Function Name (php) {{{3
-function! s:SelectInsideFunctionName()
-    execute "normal! :call <SID>GoToStartOfCurrentFunction()\rve"
+function! codecuts#SelectInsideFunctionName()
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\rve"
 endfunction
 
 " Function Parameters (php) {{{3
-function! s:SelectInsideFunctionParameters()
-    execute "normal! :call <SID>GoToStartOfCurrentFunction()\rf(lvt)"
+function! codecuts#SelectInsideFunctionParameters()
+    execute "normal! :call codecuts#GoToStartOfCurrentFunction()\rf(lvt)"
 endfunction
 
 " Operators {{{2
@@ -75,11 +75,11 @@ else
     let b:snippet_code = ""
 endif
 
-function! s:CreateFunction(type, ...)
-    call <SID>WrapLines(a:type, b:code_cuts_function_header, 1)
+function! codecuts#CreateFunction(type, ...)
+    call codecuts#WrapLines(a:type, b:code_cuts_function_header, 1)
 endfunction
 
-function! s:WrapLines(type, header, expand_snippet)
+function! codecuts#WrapLines(type, header, expand_snippet)
     if a:type ==# 'char' || a:type ==# 'line'
         " Mimic visual mode for consistency
         echom "mode: ".a:type
@@ -100,12 +100,12 @@ else
     let b:code_cuts_if_header = 'if() {'
 endif
 
-function! s:CreateIf(type, ...)
-    call <SID>WrapLines(a:type, b:code_cuts_if_header, 1)
+function! codecuts#CreateIf(type, ...)
+    call codecuts#WrapLines(a:type, b:code_cuts_if_header, 1)
 endfunction
 
 " Extract function {{{3
-function! s:ExtractFunction(type, ...)
+function! codecuts#ExtractFunction(type, ...)
     let l:new_name = input("Enter new function name: ")
     let l:append_semicolon_to_new_method = 0
     let l:append_semicolon_to_method_call = 0
@@ -128,7 +128,7 @@ function! s:ExtractFunction(type, ...)
     endif
 
     execute 'normal! "qy'
-    let l:components = <SID>GetFunctionExtractionComponents(@q,l:new_name)
+    let l:components = codecuts#GetFunctionExtractionComponents(@q,l:new_name)
     " Change the text to the new call
     let l:postfix = l:append_semicolon_to_method_call ? ';' : ''
     silent execute 'normal! gvc'.l:components.method_call.l:postfix."\<esc>=="
@@ -145,7 +145,7 @@ function! s:ExtractFunction(type, ...)
     s/\s\+$//e
 
     " Wrap with the function
-    call <SID>WrapLines(visualmode(), l:components.function_header, 0)
+    call codecuts#WrapLines(visualmode(), l:components.function_header, 0)
 
     " Add a semicolon to the last line if deemed necessary
     let l:postfix = l:append_semicolon_to_new_method ? ';' : ''
@@ -165,9 +165,9 @@ endfunction
 "       - Restore register q
 "       - Restore previous search expression
 
-function! s:GetFunctionExtractionComponents(text, method_name)
+function! codecuts#GetFunctionExtractionComponents(text, method_name)
     let l:lines = split(a:text, "\n")
-    let l:params = <SID>GetRequiredFunctionParameters(split(a:text,"\n"))
+    let l:params = codecuts#GetRequiredFunctionParameters(split(a:text,"\n"))
     let l:method_call = '$this->'.a:method_name."(".join(l:params,",").")"
     let l:is_assignment = 0
     if( len(l:lines) > 1 )
@@ -186,10 +186,10 @@ function! s:GetFunctionExtractionComponents(text, method_name)
     return {"method_call": l:method_call, "method_body": join(l:lines,"\n"), "is_assignment": l:is_assignment, "function_header": l:function_header}
 endfunction
 
-function! s:GetRequiredFunctionParameters(lines)
+function! codecuts#GetRequiredFunctionParameters(lines)
     let l:line_info = []
     for l:line in a:lines
-        let l:line_info = add(l:line_info, <SID>GetUsedVariablesForLine(l:line))
+        let l:line_info = add(l:line_info, codecuts#GetUsedVariablesForLine(l:line))
     endfor
     let l:results = []
     let l:assigned_before_accessed = []
@@ -213,7 +213,7 @@ function! s:GetRequiredFunctionParameters(lines)
     return l:results
 endfunction
 
-function! s:GetUsedVariablesForLine(line)
+function! codecuts#GetUsedVariablesForLine(line)
     let l:line_data = {"assigned_vars":[], "accessed_vars": []}
     let l:line_parts = split(a:line, '[^=+-/*!><]\zs=\ze[^=]')
     if len(l:line_parts) < 1
@@ -239,14 +239,14 @@ endfunction
 
 
 " Replace With Variable {{{3
-function! s:ReplaceWithVariable(type, ...)
-    if <SID>IsMultiLine(a:type)
+function! codecuts#ReplaceWithVariable(type, ...)
+    if codecuts#IsMultiLine(a:type)
         echom "ReplaceWithVariable is only available with single line selections"
         return
     endif
 
     let l:new_name = input("Enter new variable name: ")
-    let l:new_name = <SID>ConvertToVariableName(l:new_name)
+    let l:new_name = codecuts#ConvertToVariableName(l:new_name)
 
     " Select the text
     if a:type ==# 'char'
@@ -257,32 +257,32 @@ function! s:ReplaceWithVariable(type, ...)
 
     " Get the text
     execute 'normal! "qy'
-    let l:extracted_text = <SID>Trim(@q)
+    let l:extracted_text = codecuts#Trim(@q)
 
     " Replace all occurances of the extracted content
-    call <SID>SelectInsideFunctionBody()
+    call codecuts#SelectInsideFunctionBody()
     execute 'normal! :s/'.l:extracted_text.'/'.l:new_name.'/ge'."\<cr>"
 
     " Create variable declaration
-    call <SID>GoToStartOfCurrentFunction()
+    call codecuts#GoToStartOfCurrentFunction()
     execute "normal! o".l:new_name.' = '.l:extracted_text.';'
 endfunction
 
 " Utility Functions {{{1
 
-function! s:IsMultiLine(type)
+function! codecuts#IsMultiLine(type)
     return a:type ==# 'line' || a:type ==# 'V' || (a:type ==# 'v' && line("'<") != line("'>"))
 endfunction
 
-function! s:GoToStartOfCurrentFunction()
+function! codecuts#GoToStartOfCurrentFunction()
     execute "normal! :\<c-u>\<cr>".'?\<function\>\s*&*\s*\zs\w*\ze\s*('."\<cr>"
 endfunction
 
-function! s:Trim(the_string)
+function! codecuts#Trim(the_string)
     return substitute(a:the_string,'\s\+$','','')
 endfunction
 
-function! s:ConvertToVariableName(the_name)
+function! codecuts#ConvertToVariableName(the_name)
     return "$".substitute(a:the_name,"^\\$","","")
 endfunction
 
@@ -290,7 +290,7 @@ endfunction
 " Used for rapid testing. Reload and run the command immediately displaying
 " the results in a temp buffer
 "nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/code-cuts.vim<cr>:call Testit()<cr>
-function! s:Testit()
+function! codecuts#Testit()
     let g:test_lines = [
                 \ "            $param1->callMethod();",
                 \ "            $something = $param2 + $param3;",
@@ -306,7 +306,7 @@ function! s:Testit()
                 \ "if( $condition5 != $condition6 ) {",
                 \ "$assign1=$param6;",
                 \ ]
-    let g:result = <SID>GetRequiredFunctionParameters(g:test_lines)
+    let g:result = codecuts#GetRequiredFunctionParameters(g:test_lines)
 
     let g:test_buffer_name = "__TEST_BUFFER__"
     if bufexists(g:test_buffer_name)
