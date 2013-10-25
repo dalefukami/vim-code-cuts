@@ -8,6 +8,8 @@ if g:codecuts_map_motions
     vnoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
     onoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
     vnoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
+    onoremap <buffer> i, :<c-u>call codecuts#SelectInsideSingleFunctionParameter_php()<cr>
+    vnoremap <buffer> i, :<c-u>call codecuts#SelectInsideSingleFunctionParameter_php()<cr>
 endif
 
 " Operator Mappings {{{1
@@ -40,6 +42,26 @@ endfunction
 " Function Parameters (php) {{{3
 function! codecuts#SelectInsideFunctionParameters()
     execute "normal! :call codecuts#GoToStartOfCurrentFunction_php()\rf(lvt)"
+endfunction
+
+" Single Function Parameter (php) {{{3
+function! codecuts#SelectInsideSingleFunctionParameter_php()
+    execute "normal :\<c-u>\<cr>"
+    let l:line = getline('.')
+
+    " Search back to first comma
+    silent! execute "normal! T,"
+    if l:line[col('.')-2] != ","
+        " No comma, search back to open paren
+        execute "normal! T("
+    else
+        " TODO: If there's a space, leave it
+    endif
+
+    silent! execute "normal! vt,"
+    if l:line[col('.')] != ","
+        execute "normal! t)"
+    endif
 endfunction
 
 " Operators {{{2
