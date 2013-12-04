@@ -48,15 +48,10 @@ endfunction
 function! codecuts#SelectInsideSingleFunctionParameter_php()
     execute "normal :\<c-u>\<cr>"
     let l:line = getline('.')
+    let l:line_number = line('.')
 
-    " Search back to first comma
-    silent! execute "normal! T,"
-    if l:line[col('.')-2] != ","
-        " No comma, search back to open paren
-        execute "normal! T("
-    else
-        " TODO: If there's a space, leave it
-    endif
+    let l:start_index = codecuts#findFunctionParameterStart(l:line, col('.'))
+    call cursor(l:line_number, l:start_index+1) " Add one because strings are zero based but columns are 1 based
 
     silent! execute "normal! vt,"
     if l:line[col('.')] != ","
@@ -264,10 +259,48 @@ function! codecuts#GoToVariableDeclarationLocation_php()
     call codecuts#GoToStartOfCurrentFunction_php()
 endfunction
 
+function! codecuts#findFunctionParameterStart(line, position)
+    let l:match = 0
+    while l:match != -1
+        let l:match = match(a:line,"[(,]", l:match+1)
+        if l:match != -1 && l:match < a:position
+            let l:closest_match = l:match
+        endif
+    endwhile
+    return l:closest_match+1
+endfunction
+
 " Testing {{{1
 " Used for rapid testing. Reload and run the command immediately displaying
 " the results in a temp buffer
-"nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/code-cuts.vim<cr>:call Testit()<cr>
+nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/codecuts.vim<cr>:call codecuts#TestFindFunctionParameterStart()<cr>
+function! codecuts#TestFindFunctionParameterStart()
+    let g:test_buffer_name = "__TEST_BUFFER__"
+    if bufexists(g:test_buffer_name)
+        execute "normal! :".bufwinnr(g:test_buffer_name)."wincmd w\<CR>"
+    else
+        execute "normal! :vsplit ".g:test_buffer_name."\<CR>"
+    endif
+    normal! ggdG
+    setlocal filetype=testbuffer
+    setlocal buftype=nofile
+
+    let g:lines = [
+                \ ['enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, 33],
+                \ ['enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, 20]
+                \ ]
+
+    for [test_name, test_string, position, expected] in g:lines
+        let g:result = codecuts#findFunctionParameterStart(test_string, position)
+        if g:result == expected
+            call append('$','pass ['.test_name.']')
+        else
+            call append('$','fail ['.test_name.'] -- Expected ['.expected.']...Actual ['.g:result.']')
+        endif
+    endfor
+
+endfunction
+
 function! codecuts#Testit()
     let g:test_lines = [
                 \ "            $param1->callMethod();",
