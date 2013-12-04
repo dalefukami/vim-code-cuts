@@ -260,9 +260,24 @@ function! codecuts#GoToVariableDeclarationLocation_php()
 endfunction
 
 function! codecuts#findFunctionParameterStart(line, position)
+    let l:current_character = a:line[a:position]
+    let l:pre_sanitized_line = a:line
+    let l:sanitized_line = substitute(l:pre_sanitized_line,'[(][^(]\{-}[)]','\=repeat("X",strlen(submatch(0)))','')
+    while l:sanitized_line != l:pre_sanitized_line
+        if l:sanitized_line[a:position] != l:current_character
+            " If we changed our current character then we did too much
+            " reset the sanitized line
+            let l:sanitized_line = l:pre_sanitized_line
+        else
+            let l:pre_sanitized_line = l:sanitized_line
+            let l:sanitized_line = substitute(l:pre_sanitized_line,'[(][^(]\{-}[)]','\=repeat("X",strlen(submatch(0)))','')
+        endif
+    endwhile
+
     let l:match = 0
+    let l:closest_match = a:position
     while l:match != -1
-        let l:match = match(a:line,"[(,]", l:match+1)
+        let l:match = match(l:sanitized_line,"[(,]", l:match+1)
         if l:match != -1 && l:match < a:position
             let l:closest_match = l:match
         endif
@@ -286,8 +301,10 @@ function! codecuts#TestFindFunctionParameterStart()
     setlocal buftype=nofile
 
     let g:lines = [
-                \ ['enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, 33],
-                \ ['enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, 20]
+                \ ['Enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, 33],
+                \ ['Enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, 20],
+                \ ['Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, 4],
+                \ ['Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, 4]
                 \ ]
 
     for [test_name, test_string, position, expected] in g:lines
