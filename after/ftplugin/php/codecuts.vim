@@ -50,13 +50,12 @@ function! codecuts#SelectInsideSingleFunctionParameter_php()
     let l:line = getline('.')
     let l:line_number = line('.')
 
-    let l:start_index = codecuts#findFunctionParameterStart(l:line, col('.'))
-    call cursor(l:line_number, l:start_index+1) " Add one because strings are zero based but columns are 1 based
+    let l:boundaries = codecuts#findFunctionParameterBoundaries(l:line, col('.'))
+    call cursor(l:line_number, l:boundaries.start+1) " Add one because strings are zero based but columns are 1 based
 
-    silent! execute "normal! vt,"
-    if l:line[col('.')] != ","
-        execute "normal! t)"
-    endif
+    let l:difference = l:boundaries.end - l:boundaries.start
+
+    silent! execute "normal! v".l:difference."l"
 endfunction
 
 " Operators {{{2
@@ -259,7 +258,7 @@ function! codecuts#GoToVariableDeclarationLocation_php()
     call codecuts#GoToStartOfCurrentFunction_php()
 endfunction
 
-function! codecuts#findFunctionParameterStart(line, position)
+function! codecuts#findFunctionParameterBoundaries(line, position)
     let l:current_character = a:line[a:position]
     let l:pre_sanitized_line = a:line
     let l:sanitized_line = substitute(l:pre_sanitized_line,'[(][^(]\{-}[)]','\=repeat("X",strlen(submatch(0)))','')
@@ -282,37 +281,42 @@ function! codecuts#findFunctionParameterStart(line, position)
             let l:closest_match = l:match
         endif
     endwhile
-    return l:closest_match+1
+    let l:result = {'start': l:closest_match+1, 'end': 0}
+
+    let l:match = match(l:sanitized_line,"[),]", l:closest_match+1)
+    let l:result.end = l:match-1
+    return l:result
 endfunction
 
 " Testing {{{1
 " Used for rapid testing. Reload and run the command immediately displaying
 " the results in a temp buffer
-nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/codecuts.vim<cr>:call codecuts#TestFindFunctionParameterStart()<cr>
-function! codecuts#TestFindFunctionParameterStart()
-    let g:test_buffer_name = "__TEST_BUFFER__"
-    if bufexists(g:test_buffer_name)
-        execute "normal! :".bufwinnr(g:test_buffer_name)."wincmd w\<CR>"
+"nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/codecuts.vim<cr>:call codecuts#TestFindFunctionParameterBoundaries()<cr>
+function! codecuts#TestFindFunctionParameterBoundaries()
+    let l:test_buffer_name = "__TEST_BUFFER__"
+    if bufexists(l:test_buffer_name)
+        execute "normal! :".bufwinnr(l:test_buffer_name)."wincmd w\<CR>"
     else
-        execute "normal! :vsplit ".g:test_buffer_name."\<CR>"
+        execute "normal! :vsplit ".l:test_buffer_name."\<CR>"
     endif
     normal! ggdG
     setlocal filetype=testbuffer
     setlocal buftype=nofile
 
-    let g:lines = [
-                \ ['Enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, 33],
-                \ ['Enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, 20],
-                \ ['Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, 4],
-                \ ['Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, 4]
+    let l:lines = [
+                \ ['Enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, {'start':33, 'end':38}],
+                \ ['Enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, {'start':20, 'end':31}],
+                \ ['Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, {'start':4, 'end':16}],
+                \ ['Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, {'start':4, 'end':56}]
                 \ ]
 
-    for [test_name, test_string, position, expected] in g:lines
-        let g:result = codecuts#findFunctionParameterStart(test_string, position)
-        if g:result == expected
+    for [test_name, test_string, position, expected] in l:lines
+        let l:result = codecuts#findFunctionParameterBoundaries(test_string, position)
+        echom "Got a result ".l:result.start
+        if l:result.start == expected.start && l:result.end == expected.end
             call append('$','pass ['.test_name.']')
         else
-            call append('$','fail ['.test_name.'] -- Expected ['.expected.']...Actual ['.g:result.']')
+            call append('$','fail ['.test_name.'] -- Expected ['.expected.start.'-'.expected.end.']...Actual ['.l:result.start.'-'.l:result.end.']')
         endif
     endfor
 
