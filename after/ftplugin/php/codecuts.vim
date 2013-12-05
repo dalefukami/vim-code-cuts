@@ -281,7 +281,12 @@ function! codecuts#findFunctionParameterBoundaries(line, position)
             let l:closest_match = l:match
         endif
     endwhile
-    let l:result = {'start': l:closest_match+1, 'end': 0}
+
+    let l:start = l:closest_match + 1
+    if a:line[l:start] == ' '
+        let l:start = l:start + 1
+    endif
+    let l:result = {'start': l:start, 'end': 0}
 
     let l:match = match(l:sanitized_line,"[),]", l:closest_match+1)
     let l:result.end = l:match-1
@@ -291,7 +296,7 @@ endfunction
 " Testing {{{1
 " Used for rapid testing. Reload and run the command immediately displaying
 " the results in a temp buffer
-"nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/codecuts.vim<cr>:call codecuts#TestFindFunctionParameterBoundaries()<cr>
+nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/codecuts.vim<cr>:call codecuts#TestFindFunctionParameterBoundaries()<cr>
 function! codecuts#TestFindFunctionParameterBoundaries()
     let l:test_buffer_name = "__TEST_BUFFER__"
     if bufexists(l:test_buffer_name)
@@ -304,15 +309,15 @@ function! codecuts#TestFindFunctionParameterBoundaries()
     setlocal buftype=nofile
 
     let l:lines = [
-                \ ['Enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, {'start':33, 'end':38}],
-                \ ['Enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, {'start':20, 'end':31}],
-                \ ['Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, {'start':4, 'end':16}],
-                \ ['Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, {'start':4, 'end':56}]
+                \ ['Enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, {'start':34, 'end':38}],
+                \ ['Enclosed with no space', "$this->callFunction( $condition5,$arg2, $arg3 );", 37, {'start':33, 'end':37}],
+                \ ['Enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, {'start':21, 'end':31}],
+                \ ['Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, {'start':5, 'end':16}],
+                \ ['Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, {'start':5, 'end':56}]
                 \ ]
 
     for [test_name, test_string, position, expected] in l:lines
         let l:result = codecuts#findFunctionParameterBoundaries(test_string, position)
-        echom "Got a result ".l:result.start
         if l:result.start == expected.start && l:result.end == expected.end
             call append('$','pass ['.test_name.']')
         else
