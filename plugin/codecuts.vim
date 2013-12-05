@@ -16,9 +16,19 @@ function! codecuts#CreateOperatorMapping(mapping, function_name)
     execute "vnoremap "  g:codecuts_refactor_map_prefix.a:mapping  ":<c-u>call codecuts#".a:function_name."(visualmode())<CR>"
 endfunction
 
+function! codecuts#CreateMotionMapping(mapping, function_name)
+    execute "onoremap ".a:mapping." :<c-u>call codecuts#".a:function_name."()<cr>"
+    execute "vnoremap ".a:mapping." :<c-u>call codecuts#".a:function_name."()<cr>"
+endfunction
+
 " Operator Mappings {{{1
 if g:codecuts_map_operators
     call codecuts#CreateOperatorMapping("rwv", "ReplaceWithVariable")
+endif
+
+" Motion Mappings {{{1
+if g:codecuts_map_motions
+    call codecuts#CreateMotionMapping("i,", "SelectInsideCalledFunctionParameter")
 endif
 
 " Operators {{{1
@@ -52,6 +62,20 @@ function! codecuts#ReplaceWithVariable(type, ...)
     execute "normal! o".<SID>CallFunction("FormatVariableAssignment",l:new_name,l:extracted_text)
 endfunction
 
+" Motions {{{1
+" Single Function Parameter (php) {{{2
+function! codecuts#SelectInsideCalledFunctionParameter()
+    execute "normal :\<c-u>\<cr>"
+    let l:line = getline('.')
+    let l:line_number = line('.')
+
+    let l:boundaries = <SID>CallFunction("FindFunctionParameterBoundaries",l:line, col('.'))
+    call cursor(l:line_number, l:boundaries.start+1) " Add one because strings are zero based but columns are 1 based
+
+    let l:difference = l:boundaries.end - l:boundaries.start
+
+    silent! execute "normal! v".l:difference."l"
+endfunction
 " Utility Functions {{{1
 
 function! codecuts#IsMultiLine(type)
@@ -70,7 +94,6 @@ endfunction
 
 " Call a filetype specific function
 function! s:CallFunction(function_name,...)
-    let l:result = ''
     execute 'normal! :let l:result = call("'.<SID>FunctionName(a:function_name).'",a:000)'."\r"
     return l:result
 endfunction

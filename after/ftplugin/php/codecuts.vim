@@ -8,8 +8,6 @@ if g:codecuts_map_motions
     vnoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
     onoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
     vnoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
-    onoremap <buffer> i, :<c-u>call codecuts#SelectInsideSingleFunctionParameter_php()<cr>
-    vnoremap <buffer> i, :<c-u>call codecuts#SelectInsideSingleFunctionParameter_php()<cr>
 endif
 
 " Operator Mappings {{{1
@@ -42,20 +40,6 @@ endfunction
 " Function Parameters (php) {{{3
 function! codecuts#SelectInsideFunctionParameters()
     execute "normal! :call codecuts#GoToStartOfCurrentFunction_php()\rf(lvt)"
-endfunction
-
-" Single Function Parameter (php) {{{3
-function! codecuts#SelectInsideSingleFunctionParameter_php()
-    execute "normal :\<c-u>\<cr>"
-    let l:line = getline('.')
-    let l:line_number = line('.')
-
-    let l:boundaries = codecuts#findFunctionParameterBoundaries(l:line, col('.'))
-    call cursor(l:line_number, l:boundaries.start+1) " Add one because strings are zero based but columns are 1 based
-
-    let l:difference = l:boundaries.end - l:boundaries.start
-
-    silent! execute "normal! v".l:difference."l"
 endfunction
 
 " Operators {{{2
@@ -258,7 +242,7 @@ function! codecuts#GoToVariableDeclarationLocation_php()
     call codecuts#GoToStartOfCurrentFunction_php()
 endfunction
 
-function! codecuts#findFunctionParameterBoundaries(line, position)
+function! codecuts#FindFunctionParameterBoundaries_php(line, position)
     let l:current_character = a:line[a:position]
     let l:pre_sanitized_line = a:line
     let l:sanitized_line = substitute(l:pre_sanitized_line,'[(][^(]\{-}[)]','\=repeat("X",strlen(submatch(0)))','')
@@ -296,7 +280,7 @@ endfunction
 " Testing {{{1
 " Used for rapid testing. Reload and run the command immediately displaying
 " the results in a temp buffer
-nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/codecuts.vim<cr>:call codecuts#TestFindFunctionParameterBoundaries()<cr>
+"nnoremap <leader>r :source $HOME/.vim/bundle/vim-code-cuts/after/ftplugin/php/codecuts.vim<cr>:call codecuts#TestFindFunctionParameterBoundaries()<cr>
 function! codecuts#TestFindFunctionParameterBoundaries()
     let l:test_buffer_name = "__TEST_BUFFER__"
     if bufexists(l:test_buffer_name)
@@ -317,14 +301,13 @@ function! codecuts#TestFindFunctionParameterBoundaries()
                 \ ]
 
     for [test_name, test_string, position, expected] in l:lines
-        let l:result = codecuts#findFunctionParameterBoundaries(test_string, position)
+        let l:result = codecuts#FindFunctionParameterBoundaries_php(test_string, position)
         if l:result.start == expected.start && l:result.end == expected.end
             call append('$','pass ['.test_name.']')
         else
             call append('$','fail ['.test_name.'] -- Expected ['.expected.start.'-'.expected.end.']...Actual ['.l:result.start.'-'.l:result.end.']')
         endif
     endfor
-
 endfunction
 
 function! codecuts#Testit()
