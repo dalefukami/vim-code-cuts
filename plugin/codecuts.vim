@@ -29,6 +29,7 @@ endif
 " Motion Mappings {{{1
 if g:codecuts_map_motions
     call codecuts#CreateMotionMapping("i,", "SelectInsideCalledFunctionParameter")
+    call codecuts#CreateMotionMapping("a,", "SelectAroundCalledFunctionParameter")
 endif
 
 " Operators {{{1
@@ -69,13 +70,28 @@ function! codecuts#SelectInsideCalledFunctionParameter()
     let l:line = getline('.')
     let l:line_number = line('.')
 
-    let l:boundaries = <SID>CallFunction("FindFunctionParameterBoundaries",l:line, col('.'))
+    let l:boundaries = <SID>CallFunction("FindFunctionParameterBoundaries",l:line, col('.'), 1)
     call cursor(l:line_number, l:boundaries.start+1) " Add one because strings are zero based but columns are 1 based
 
     let l:difference = l:boundaries.end - l:boundaries.start
 
     silent! execute "normal! v".l:difference."l"
 endfunction
+
+" Around Single Function Parameter (php) {{{2
+function! codecuts#SelectAroundCalledFunctionParameter()
+    execute "normal :\<c-u>\<cr>"
+    let l:line = getline('.')
+    let l:line_number = line('.')
+
+    let l:boundaries = <SID>CallFunction("FindFunctionParameterBoundaries",l:line, col('.'), 0)
+    call cursor(l:line_number, l:boundaries.start+1) " Add one because strings are zero based but columns are 1 based
+
+    let l:difference = l:boundaries.end - l:boundaries.start
+
+    silent! execute "normal! v".l:difference."l"
+endfunction
+
 " Utility Functions {{{1
 
 function! codecuts#IsMultiLine(type)

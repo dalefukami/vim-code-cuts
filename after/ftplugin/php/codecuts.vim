@@ -242,7 +242,7 @@ function! codecuts#GoToVariableDeclarationLocation_php()
     call codecuts#GoToStartOfCurrentFunction_php()
 endfunction
 
-function! codecuts#FindFunctionParameterBoundaries_php(line, position)
+function! codecuts#FindFunctionParameterBoundaries_php(line, position, is_inside)
     let l:current_character = a:line[a:position]
     let l:pre_sanitized_line = a:line
     let l:sanitized_line = substitute(l:pre_sanitized_line,'[(][^(]\{-}[)]','\=repeat("X",strlen(submatch(0)))','')
@@ -258,22 +258,42 @@ function! codecuts#FindFunctionParameterBoundaries_php(line, position)
     endwhile
 
     let l:match = 0
-    let l:closest_match = a:position
+    let l:start_match = a:position
     while l:match != -1
         let l:match = match(l:sanitized_line,"[(,]", l:match+1)
         if l:match != -1 && l:match < a:position
-            let l:closest_match = l:match
+            let l:start_match = l:match
         endif
     endwhile
 
-    let l:start = l:closest_match + 1
-    if a:line[l:start] == ' '
+    let l:start = l:start_match
+    if !a:is_inside
         let l:start = l:start + 1
+        if a:line[l:start] == ' '
+            let l:start = l:start + 1
+        endif
+    else
+        let l:start = l:start_match + 1
+        if a:line[l:start] == ' '
+            let l:start = l:start + 1
+        endif
     endif
-    let l:result = {'start': l:start, 'end': 0}
 
-    let l:match = match(l:sanitized_line,"[),]", l:closest_match+1)
-    let l:result.end = l:match-1
+    let l:match = match(l:sanitized_line,"[),]", l:start_match+1)
+    let l:end = l:match
+    if !a:is_inside
+        if a:line[l:end] == ')'
+            let l:end = l:end - 1
+            " Gotta remove the previous comma if it's the last arg
+            let l:start = l:start_match
+        elseif a:line[l:end+1] == ' '
+            let l:end = l:end + 1
+        endif
+    else
+        let l:end = l:end-1
+    endif
+
+    let l:result = {'start': l:start, 'end': l:end}
     return l:result
 endfunction
 
@@ -293,15 +313,33 @@ function! codecuts#TestFindFunctionParameterBoundaries()
     setlocal buftype=nofile
 
     let l:lines = [
-                \ ['Enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, {'start':34, 'end':38}],
-                \ ['Enclosed with no space', "$this->callFunction( $condition5,$arg2, $arg3 );", 37, {'start':33, 'end':37}],
-                \ ['Enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, {'start':21, 'end':31}],
-                \ ['Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, {'start':5, 'end':16}],
-                \ ['Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, {'start':5, 'end':56}]
+                \ ['Inside - Enclosed with commas', "$this->callFunction( $condition5, $arg2, $arg3 );", 37, {'start':34, 'end':38}],
+                \ ['Inside - Enclosed with no space', "$this->callFunction( $condition5,$arg2, $arg3 );", 37, {'start':33, 'end':37}],
+                \ ['Inside - Enclosed with paren', "$this->callFunction( $condition5, $arg2, $arg3 );", 24, {'start':21, 'end':31}],
+                \ ['Inside - Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, {'start':5, 'end':16}],
+                \ ['Inside - Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, {'start':5, 'end':56}]
                 \ ]
 
     for [test_name, test_string, position, expected] in l:lines
-        let l:result = codecuts#FindFunctionParameterBoundaries_php(test_string, position)
+        let l:result = codecuts#FindFunctionParameterBoundaries_php(test_string, position, 1)
+        if l:result.start == expected.start && l:result.end == expected.end
+            call append('$','pass ['.test_name.']')
+        else
+            call append('$','fail ['.test_name.'] -- Expected ['.expected.start.'-'.expected.end.']...Actual ['.l:result.start.'-'.l:result.end.']')
+        endif
+    endfor
+
+    let l:lines = [
+                \ ['Around - Enclosed with commas', "$this->callFunction($condition5,$arg2,$arg3 );", 37, {'start':32, 'end':37}],
+                \ ['Around - With space before argument', "$this->callFunction($condition5, $arg2,$arg3 );", 37, {'start':33, 'end':38}],
+                \ ['Around - With space before next argument', "$this->callFunction($condition5, $arg2, $arg3 );", 37, {'start':33, 'end':39}],
+                \ ['Around - Last argument', "$this->callFunction($condition5, $arg2, $arg3 );", 42, {'start':38, 'end':45}],
+                \ ['Around - Parens within param', "fun( $a->fun2()+2, $arg3 );", 15, {'start':5, 'end':18}],
+                \ ['Around - Parens within param and junk', 'fun( $a->fun2("some cool stuff, and more")+"crazy things", $arg3 );', 50, {'start':5, 'end':58}]
+                \ ]
+
+    for [test_name, test_string, position, expected] in l:lines
+        let l:result = codecuts#FindFunctionParameterBoundaries_php(test_string, position, 0)
         if l:result.start == expected.start && l:result.end == expected.end
             call append('$','pass ['.test_name.']')
         else
