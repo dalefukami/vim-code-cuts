@@ -1,9 +1,5 @@
 " Motion (Operator-Pending) Mappings {{{1
 if g:codecuts_map_motions
-    onoremap <buffer> afb :<c-u>call codecuts#SelectAroundFunctionBody()<cr>
-    vnoremap <buffer> afb :<c-u>call codecuts#SelectAroundFunctionBody()<cr>
-    onoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody_php()<cr>
-    vnoremap <buffer> ifb :<c-u>call codecuts#SelectInsideFunctionBody_php()<cr>
     onoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
     vnoremap <buffer> ifn :<c-u>call codecuts#SelectInsideFunctionName()<cr>
     onoremap <buffer> ifp :<c-u>call codecuts#SelectInsideFunctionParameters()<cr>
@@ -23,7 +19,7 @@ endif
 " TODO genericize the function detection for different file types?
 " TODO restore the old search value
 " TODO: Make around function take the newline above function if it's empty
-function! codecuts#SelectAroundFunctionBody()
+function! codecuts#SelectAroundFunctionBody_php()
     execute "normal! :call codecuts#GoToStartOfCurrentFunction_php()\r".'0V/{'."\r".'%'
 endfunction
 

@@ -30,6 +30,8 @@ endif
 if g:codecuts_map_motions
     call codecuts#CreateMotionMapping("i,", "SelectInsideCalledFunctionParameter")
     call codecuts#CreateMotionMapping("a,", "SelectAroundCalledFunctionParameter")
+    call codecuts#CreateMotionMapping("afb", "SelectAroundFunctionBody")
+    call codecuts#CreateMotionMapping("ifb", "SelectInsideFunctionBody")
 endif
 
 " Operators {{{1
@@ -64,6 +66,16 @@ function! codecuts#ReplaceWithVariable(type, ...)
 endfunction
 
 " Motions {{{1
+" Around Function Body {{{2
+function! codecuts#SelectAroundFunctionBody()
+    call <SID>CallFunction("SelectAroundFunctionBody")
+endfunction
+
+" Around Function Body {{{2
+function! codecuts#SelectInsideFunctionBody()
+    call <SID>CallFunction("SelectInsideFunctionBody")
+endfunction
+
 " Single Function Parameter (php) {{{2
 function! codecuts#SelectInsideCalledFunctionParameter()
     execute "normal :\<c-u>\<cr>"
